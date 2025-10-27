@@ -415,8 +415,6 @@ logs
 appsettings.Production.json
 appsettings.Staging.json
 appsettings.Local.json
-appsettings.Development.json
-appsettings.json
 secrets.json
 *.pfx
 *.p12
