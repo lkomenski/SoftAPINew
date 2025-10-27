@@ -414,10 +414,11 @@ logs
 # Secrets and sensitive configuration
 appsettings.Production.json
 appsettings.Staging.json
+appsettings.Local.json
+appsettings.Development.json
+appsettings.json
 secrets.json
 *.pfx
 *.p12
 connection-strings.json
-appsettings.*.Local.json
-appsettings.*.Development.json
 *.usersecret
