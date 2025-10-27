@@ -5,9 +5,21 @@ function Login() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [message, setMessage] = useState('');
+
+    async function handleSubmit(e) {
+        console.log('e from button', e);
+        // Prevent default form submission behavior
+        e.preventDefault();
+        console.log({ email: validateEmail(email), password: validatePassword(password) });
+
+        // Clear message after submission
+        setMessage('Login form submitted!');
+    }
 
     return (
-        <form>
+        // onSubmit event handler added to the form element
+        <form onSubmit={handleSubmit}> 
             <h2>Login</h2>
             <div>
                 <label htmlFor="email">Email:</label>
@@ -35,11 +47,8 @@ function Login() {
                     }}
                     required />
             </div>
-            <button type="submit" onClick={(e) => {
-                console.log('e from button', e);
-                e.preventDefault();
-                console.log({ email: validateEmail(email), password: validatePassword(password) });
-            }}>Login</button>
+            <button type="submit">Login</button>
+            {message && <div>{message}</div>}
         </form>
     );
 }
