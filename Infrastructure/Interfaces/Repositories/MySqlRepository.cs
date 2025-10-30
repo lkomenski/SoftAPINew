@@ -13,9 +13,9 @@ namespace SoftAPINew.Infrastructure.Interfaces.Repositories.MySql
             _connectionString = config.GetConnectionString("AP") ?? throw new ArgumentNullException(nameof(config), "DefaultConnection string cannot be null");
         }
 
-        public async Task<IEnumerable<string>> GetDataAsync(string storedProc)
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetDataAsync(string storedProc)
         {
-            var data = new List<string>();
+            var results = new List<IDictionary<string, object?>>();
 
             using var connection = new MySqlConnection(_connectionString);
             await connection.OpenAsync();
@@ -26,10 +26,45 @@ namespace SoftAPINew.Infrastructure.Interfaces.Repositories.MySql
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                data.Add(reader.GetString(0));
+                var newRow = new Dictionary<string, object?>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    newRow[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                }
+                results.Add(newRow);
             }
 
-            return data;
+            return results;
+        }
+
+        public async Task<IEnumerable<IDictionary<string, object?>>> GetDataAsync(string storedProc, IDictionary<string, object?> parameters)
+        {
+            var results = new List<IDictionary<string, object?>>();
+
+            using var connection = new MySqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var command = new MySqlCommand(storedProc, connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            // Add parameters to the command
+            foreach (var parameter in parameters)
+            {
+                command.Parameters.AddWithValue($"@{parameter.Key}", parameter.Value ?? DBNull.Value);
+            }
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var newRow = new Dictionary<string, object?>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    newRow[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                }
+                results.Add(newRow);
+            }
+
+            return results;
         }
     }
 }

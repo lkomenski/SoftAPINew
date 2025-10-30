@@ -82,26 +82,28 @@ public class ProductController : ControllerBase
         }
     }
 
-
+    // HTTP PUT method to update an existing product
     [HttpPut("{id}", Name = "UpdateProduct")]
-    public IActionResult Update(int id, [FromBody] Product updatedProduct)
+    public IActionResult Update(int id, Product updatedProduct)
     {
-        try
-        {
-            var product = products.FirstOrDefault(p => p.ProductID == id);
-            if (product == null)
-                return NotFound();
-        }
+        var product = products.FirstOrDefault(p => p.ProductID == id);
+        if (product == null) return NotFound();
 
-        [HttpDelete("{id}", Name = "DeleteProduct")]
-        public IActionResult Delete(int id)
-        {
-            var product = products.FirstOrDefault(p => p.ProductID == id);
-                
-                if (product == null) return NotFound();
-                bool removed = products.Remove(product);
-                return NoContent();
-        }
+        product.ProductName = updatedProduct.ProductName;
+        product.ListPrice = updatedProduct.ListPrice;
 
+        return NoContent();
+    }
+    
+    // HTTP DELETE method to delete a product by ID
+    [HttpDelete("{id}", Name = "DeleteProduct")]
+    public IActionResult Delete(int id)
+    {
+        var product = products.FirstOrDefault(p => p.ProductID == id);
 
+        if (product == null) return NotFound();
+        bool removed = products.Remove(product);
+
+        return NoContent();
+    }
 }
