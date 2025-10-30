@@ -1,7 +1,11 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
+// Local appsettings.Local.json
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
+
+// Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

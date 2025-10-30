@@ -1,7 +1,8 @@
 using MySqlConnector;
 using System.Data;
+using SoftAPINew.Infrastructure.Interfaces;
 
-namespace SoftAPINew.Infrastructure.Repositories
+namespace SoftAPINew.Infrastructure.Interfaces.Repositories.MySql
 {
     public class MySqlRepository : IDataRepository
     {
@@ -9,7 +10,7 @@ namespace SoftAPINew.Infrastructure.Repositories
 
         public MySqlRepository(IConfiguration config)
         {
-            _connectionString = config.GetConnectionString("DefaultConnection") ?? throw new ArgumentNullException(nameof(config), "DefaultConnection string cannot be null");
+            _connectionString = config.GetConnectionString("AP") ?? throw new ArgumentNullException(nameof(config), "DefaultConnection string cannot be null");
         }
 
         public async Task<IEnumerable<string>> GetDataAsync(string storedProc)

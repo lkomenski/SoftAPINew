@@ -3,4 +3,10 @@
 GET {{SoftAPINew_HostAddress}}/weatherforecast/
 Accept: application/json
 
+GET {{SoftAPINew_HostAddress}}/product/
+Accept: application/json
+
+GET {{SoftAPINew_HostAddress}}/contact/
+Accept: application/json
+
 ###

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+
 using SoftAPINew.Models;
 
 namespace SoftAPINew.Controllers;
@@ -9,11 +11,11 @@ namespace SoftAPINew.Controllers;
     
 public class ContactsController : ControllerBase 
 {
-    const string connectionString = "Server=LEENA-LAPTOP;Database=AP;User Id=AppUser;Password=password1;Encrypt=False;TrustServerCertificate=True;";
-    SqlConnection _connection;
+    private readonly SqlConnection _connection;
 
-    public ContactsController()
+    public ContactsController(IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("AP");
         _connection = new SqlConnection(connectionString);
         _connection.Open();
     }
@@ -44,9 +46,3 @@ public class ContactsController : ControllerBase
      }
  }
 
-public class Contact
-{
-    public int VendorID { get; set; } = 0;
-    public string LastName { get; set; } = string.Empty;
-    public string FirstName { get; set; } = string.Empty;
-}

@@ -15,6 +15,33 @@ function Login() {
 
         // Clear message after submission
         setMessage('Login form submitted!');
+
+        // Validate email and password
+        if (!validateEmail(email)) {
+            setMessage('Invalid email format.');
+            return;
+        }
+        if (!validatePassword(password)) {
+            setMessage('Invalid password format.');
+            return;
+        }
+        try { const response = await fetch('http://localhost:5202/login', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password }),
+            });
+
+            console.log('response', response);
+            if (response.ok) {
+                const data = await response.json();
+                setMessage('Login successful!');
+            }
+
+        } catch (error){
+            setMessage('An error occurred during login.');
+        }
     }
 
     return (

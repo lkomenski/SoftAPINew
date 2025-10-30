@@ -81,4 +81,27 @@ public class ProductController : ControllerBase
             return StatusCode(500, "An error occurred while processing your request.");
         }
     }
+
+
+    [HttpPut("{id}", Name = "UpdateProduct")]
+    public IActionResult Update(int id, [FromBody] Product updatedProduct)
+    {
+        try
+        {
+            var product = products.FirstOrDefault(p => p.ProductID == id);
+            if (product == null)
+                return NotFound();
+        }
+
+        [HttpDelete("{id}", Name = "DeleteProduct")]
+        public IActionResult Delete(int id)
+        {
+            var product = products.FirstOrDefault(p => p.ProductID == id);
+                
+                if (product == null) return NotFound();
+                bool removed = products.Remove(product);
+                return NoContent();
+        }
+
+
 }
