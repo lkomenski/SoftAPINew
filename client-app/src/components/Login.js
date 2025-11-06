@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { validateEmail, validatePassword } from '../scripts';
+import Button from './Button';
 
 function Login() {
 
@@ -75,7 +76,8 @@ function Login() {
                     }}
                     required />
             </div>
-            <button type="submit">Login</button>
+            <Button type='submit' bgColor="blue" color="white">
+                Login</Button>
             {message && <div>{message}</div>}
         </form>
     );
