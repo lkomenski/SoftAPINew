@@ -4,11 +4,11 @@ using SoftAPINew.Infrastructure.Interfaces;
 
 namespace SoftAPINew.Infrastructure.Interfaces.Repositories.SqlData
 {
-    public class SqlDataRepository : IDataRepository
+    public class SqlServerRepository : IDataRepository
     {
         private readonly string _connectionString = string.Empty;
 
-        public SqlDataRepository(string connectionString)
+        public SqlServerRepository(string connectionString)
         {
             _connectionString = connectionString ?? string.Empty;
         }
