@@ -1,46 +1,44 @@
 using Microsoft.AspNetCore.Mvc;
 using SoftAPINew.Models;
+using SoftAPINew.Infrastructure.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace SoftAPINew.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-
 public class ProductController : ControllerBase
 {
-    private static List<Product> products = new List<Product>
+    private readonly IDataRepository _dataRepository;
+    private readonly ProductStoredProcedures _storedProcedures;
+
+    public ProductController(IDataRepository dataRepository, IOptions<ProductStoredProcedures> storedProcedures)
     {
-        new Product
-        {
-            ProductID = 1,
-            CategoryId = 1,
-            ProductCode = "GDN-0011",
-            ProductName = "Garden Cart",
-            Description = "15 gallon capacity rolling garden cart",
-            ListPrice = 32.99M,
-            DiscountPercent = 0M
-        },
-        new Product
-        {
-            ProductID = 2,
-            CategoryId = 2,
-            ProductCode = "TBX-0022",
-            ProductName = "Tool Box",
-            Description = "16 gallon capacity tool box with wheels",
-            ListPrice = 24.99M,
-            DiscountPercent = 0M
-        }
-    };
+        _dataRepository = dataRepository;
+        _storedProcedures = storedProcedures.Value;
+    }
     
     // HTTP GET method to retrieve all products
     [HttpGet(Name = "GetProducts")]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll()
     {
         try
         {
+            var data = await _dataRepository.GetDataAsync(_storedProcedures.GetAllProducts);
+            var products = data.Select(row => new Product
+            {
+                ProductID = Convert.ToInt32(row["ProductID"]),
+                CategoryId = Convert.ToInt32(row["CategoryID"]),
+                ProductCode = row["ProductCode"]?.ToString() ?? "",
+                ProductName = row["ProductName"]?.ToString() ?? "",
+                Description = row["Description"]?.ToString() ?? "",
+                ListPrice = Convert.ToDecimal(row["ListPrice"]),
+                DiscountPercent = Convert.ToDecimal(row["DiscountPercent"])
+            }).ToList();
+
             return Ok(products);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, "An error occurred while processing your request.");
         }
@@ -48,16 +46,31 @@ public class ProductController : ControllerBase
 
     // HTTP GET method to retrieve a product by ID
     [HttpGet("{id}", Name = "GetProductById")]
-    public IActionResult GetById(int id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
-            var product = products.FirstOrDefault(p => p.ProductID == id);
-            if (product == null)
+            var parameters = new Dictionary<string, object?> { { "ProductID", id } };
+            var data = await _dataRepository.GetDataAsync(_storedProcedures.GetProductById, parameters);
+            
+            var productData = data.FirstOrDefault();
+            if (productData == null)
                 return NotFound();
+
+            var product = new Product
+            {
+                ProductID = Convert.ToInt32(productData["ProductID"]),
+                CategoryId = Convert.ToInt32(productData["CategoryID"]),
+                ProductCode = productData["ProductCode"]?.ToString() ?? "",
+                ProductName = productData["ProductName"]?.ToString() ?? "",
+                Description = productData["Description"]?.ToString() ?? "",
+                ListPrice = Convert.ToDecimal(productData["ListPrice"]),
+                DiscountPercent = Convert.ToDecimal(productData["DiscountPercent"])
+            };
+
             return Ok(product);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, "An error occurred while processing your request.");
         }
@@ -65,18 +78,35 @@ public class ProductController : ControllerBase
 
     // HTTP POST method to add a new product
     [HttpPost(Name = "CreateProduct")]
-    public IActionResult Create([FromBody] Product newProduct)
+    public async Task<IActionResult> Create([FromBody] Product newProduct)
     {
         try
         {
             if (newProduct == null)
                 return BadRequest("Invalid product data.");
 
-            newProduct.ProductID = products.Count + 1;
-            products.Add(newProduct);
-            return CreatedAtRoute("GetProductById", new { id = newProduct.ProductID }, newProduct);
+            var parameters = new Dictionary<string, object?>
+            {
+                { "CategoryID", newProduct.CategoryId },
+                { "ProductCode", newProduct.ProductCode },
+                { "ProductName", newProduct.ProductName },
+                { "Description", newProduct.Description },
+                { "ListPrice", newProduct.ListPrice },
+                { "DiscountPercent", newProduct.DiscountPercent }
+            };
+
+            var result = await _dataRepository.GetDataAsync(_storedProcedures.InsertProduct, parameters);
+            var insertedData = result.FirstOrDefault();
+            
+            if (insertedData != null && insertedData.ContainsKey("ProductID"))
+            {
+                newProduct.ProductID = Convert.ToInt32(insertedData["ProductID"]);
+                return CreatedAtRoute("GetProductById", new { id = newProduct.ProductID }, newProduct);
+            }
+
+            return StatusCode(500, "Failed to create product.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, "An error occurred while processing your request.");
         }
@@ -84,26 +114,46 @@ public class ProductController : ControllerBase
 
     // HTTP PUT method to update an existing product
     [HttpPut("{id}", Name = "UpdateProduct")]
-    public IActionResult Update(int id, Product updatedProduct)
+    public async Task<IActionResult> Update(int id, [FromBody] Product updatedProduct)
     {
-        var product = products.FirstOrDefault(p => p.ProductID == id);
-        if (product == null) return NotFound();
+        try
+        {
+            if (updatedProduct == null)
+                return BadRequest("Invalid product data.");
 
-        product.ProductName = updatedProduct.ProductName;
-        product.ListPrice = updatedProduct.ListPrice;
+            var parameters = new Dictionary<string, object?>
+            {
+                { "ProductID", id },
+                { "CategoryID", updatedProduct.CategoryId },
+                { "ProductCode", updatedProduct.ProductCode },
+                { "ProductName", updatedProduct.ProductName },
+                { "Description", updatedProduct.Description },
+                { "ListPrice", updatedProduct.ListPrice },
+                { "DiscountPercent", updatedProduct.DiscountPercent }
+            };
 
-        return NoContent();
+            await _dataRepository.GetDataAsync(_storedProcedures.UpdateProduct, parameters);
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while processing your request.");
+        }
     }
     
     // HTTP DELETE method to delete a product by ID
     [HttpDelete("{id}", Name = "DeleteProduct")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        var product = products.FirstOrDefault(p => p.ProductID == id);
-
-        if (product == null) return NotFound();
-        bool removed = products.Remove(product);
-
-        return NoContent();
+        try
+        {
+            var parameters = new Dictionary<string, object?> { { "ProductID", id } };
+            await _dataRepository.GetDataAsync(_storedProcedures.DeleteProduct, parameters);
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while processing your request.");
+        }
     }
 }

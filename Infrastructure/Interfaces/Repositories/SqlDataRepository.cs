@@ -48,9 +48,11 @@ namespace SoftAPINew.Infrastructure.Interfaces.Repositories.SqlData
             command.CommandType = CommandType.StoredProcedure;
 
             // Add parameters to the command
-            foreach (var parameter in parameters)
+            foreach (var kvp in parameters)
             {
-                command.Parameters.AddWithValue($"@{parameter.Key}", parameter.Value ?? DBNull.Value);
+                // Ensure parameter name starts with '@'
+                var paramName = kvp.Key.StartsWith("@") ? kvp.Key : "@" + kvp.Key;
+                command.Parameters.AddWithValue(paramName, kvp.Value ?? DBNull.Value);
             }
 
             using var reader = await command.ExecuteReaderAsync();
