@@ -2,7 +2,7 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using SoftAPINew.Infrastructure.Interfaces;
 
-namespace SoftAPINew.Infrastructure.Interfaces.Repositories.SqlData
+namespace SoftAPINew.Infrastructure.Interfaces.Repositories.SqlServerRepository
 {
     public class SqlServerRepository : IDataRepository
     {

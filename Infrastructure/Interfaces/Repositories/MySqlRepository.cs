@@ -2,7 +2,7 @@ using MySqlConnector;
 using System.Data;
 using SoftAPINew.Infrastructure.Interfaces;
 
-namespace SoftAPINew.Infrastructure.Interfaces.Repositories.MySql
+namespace SoftAPINew.Infrastructure.Interfaces.Repositories.MySqlRepository
 {
    public class MySqlRepository : IDataRepository
 {
