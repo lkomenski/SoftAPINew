@@ -1,6 +1,9 @@
 using SoftAPINew.Infrastructure.Interfaces;
 
-public interface IDataRepositoryFactory
+namespace SoftAPINew.Infrastructure.Interfaces
 {
-    IDataRepository Create(string connectionString);
+    public interface IDataRepositoryFactory
+    {
+        IDataRepository Create(string connectionString);
+    }
 }

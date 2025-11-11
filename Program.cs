@@ -1,3 +1,6 @@
+using SoftAPINew.Infrastructure.Interfaces;
+using SoftAPINew.Infrastructure.Interfaces.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Local appsettings.Local.json
@@ -10,12 +13,12 @@ builder.Services.AddControllers();
 builder.Services.Configure<SoftAPINew.Models.ProductStoredProcedures>(
     builder.Configuration.GetSection("ProductStoredProcedures"));
 
-// Register IDataRepository with dependency injection
-builder.Services.AddScoped<SoftAPINew.Infrastructure.Interfaces.IDataRepository, SoftAPINew.Infrastructure.Interfaces.Repositories.SqlData.SqlDataRepository>(provider =>
+// Register IDataRepository directly (simpler approach)
+builder.Services.AddScoped<IDataRepository>(provider =>
 {
     var configuration = provider.GetRequiredService<IConfiguration>();
     var connectionString = configuration.GetConnectionString("AP") ?? throw new InvalidOperationException("Connection string 'AP' not found.");
-    return new SoftAPINew.Infrastructure.Interfaces.Repositories.SqlData.SqlDataRepository(connectionString);
+    return new SqlServerRepository(connectionString);
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

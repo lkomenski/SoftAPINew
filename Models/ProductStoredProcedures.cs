@@ -4,7 +4,7 @@ namespace SoftAPINew.Models
     {
         public string GetAllProducts { get; set; } = "GetAllProducts";
         public string GetProductById { get; set; } = "GetProductByID";
-        public string InsertProduct { get; set; } = "InsertProduct";
+        public string AddProduct { get; set; } = "AddProduct";
         public string UpdateProduct { get; set; } = "UpdateProduct";
         public string DeleteProduct { get; set; } = "DeleteProduct";
     }

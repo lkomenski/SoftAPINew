@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using SoftAPINew.Infrastructure.Interfaces;
 
 using SoftAPINew.Models;
 
@@ -11,38 +11,31 @@ namespace SoftAPINew.Controllers;
     
 public class ContactsController : ControllerBase 
 {
-    private readonly SqlConnection _connection;
+    private readonly IDataRepository _repo;
 
-    public ContactsController(IConfiguration configuration)
+    public ContactsController(IDataRepositoryFactory factory)
     {
-        var connectionString = configuration.GetConnectionString("AP");
-        _connection = new SqlConnection(connectionString);
-        _connection.Open();
+        _repo = factory.Create("AP");
     }
 
     [HttpGet(Name = "GetContacts")]
-    public List<Contact> GetAll()
+    public async Task<List<Contact>> GetAll()
     {
-        var contacts = new List<Contact>();
+        var results = new List<Contact>();
+        var rows = await _repo.GetDataAsync("GetAllContactUpdates");
 
-        using (SqlCommand command = new SqlCommand("GetAllContactUpdates", _connection))
+
+        foreach (var row in rows) 
         {
-            command.CommandType = System.Data.CommandType.StoredProcedure;
-            using (SqlDataReader reader = command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    var contact = new Contact
-                    {
-                        VendorID = reader["VendorID"] != DBNull.Value ? Convert.ToInt32(reader["VendorID"]) : 0,
-                        LastName = reader["LastName"]?.ToString() ?? string.Empty,
-                        FirstName = reader["FirstName"]?.ToString() ?? string.Empty
-                    };
-                    contacts.Add(contact);
-                }
-            }
-        }
-        return contacts;
-     }
- }
+            var contact = new Contact {
+                VendorID = row["VendorID"] != DBNull.Value ? Convert.ToInt32(row["VendorID"]) : 0,
+                FirstName = row["FirstName"]?.ToString() ?? string.Empty,
+                LastName = row["LastName"]?.ToString() ?? string.Empty,
+            };
 
+            results.Add(contact);
+        }
+        
+        return results;
+    }
+}

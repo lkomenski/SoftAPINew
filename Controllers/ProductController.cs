@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SoftAPINew.Models;
 using SoftAPINew.Infrastructure.Interfaces;
-using Microsoft.Extensions.Options;
 
 namespace SoftAPINew.Controllers;
 
@@ -9,33 +8,22 @@ namespace SoftAPINew.Controllers;
 [Route("[controller]")]
 public class ProductController : ControllerBase
 {
-    private readonly IDataRepository _dataRepository;
-    private readonly ProductStoredProcedures _storedProcedures;
+    private readonly IDataRepository _repo;
 
-    public ProductController(IDataRepository dataRepository, IOptions<ProductStoredProcedures> storedProcedures)
+    public ProductController(IDataRepositoryFactory factory)
     {
-        _dataRepository = dataRepository;
-        _storedProcedures = storedProcedures.Value;
+        _repo = factory.Create("MyGuitarShop");
     }
-    
+
+
     // HTTP GET method to retrieve all products
     [HttpGet(Name = "GetProducts")]
     public async Task<IActionResult> GetAll()
     {
         try
         {
-            var data = await _dataRepository.GetDataAsync(_storedProcedures.GetAllProducts);
-            var products = data.Select(row => new Product
-            {
-                ProductID = Convert.ToInt32(row["ProductID"]),
-                CategoryId = Convert.ToInt32(row["CategoryID"]),
-                ProductCode = row["ProductCode"]?.ToString() ?? "",
-                ProductName = row["ProductName"]?.ToString() ?? "",
-                Description = row["Description"]?.ToString() ?? "",
-                ListPrice = Convert.ToDecimal(row["ListPrice"]),
-                DiscountPercent = Convert.ToDecimal(row["DiscountPercent"])
-            }).ToList();
-
+            var rows = await _repo.GetDataAsync("GetAllProducts");
+            var products = rows.Select(ConvertToProduct).ToList();
             return Ok(products);
         }
         catch (Exception)
@@ -51,7 +39,7 @@ public class ProductController : ControllerBase
         try
         {
             var parameters = new Dictionary<string, object?> { { "ProductID", id } };
-            var data = await _dataRepository.GetDataAsync(_storedProcedures.GetProductById, parameters);
+            var data = await _repo.GetDataAsync("GetProductById", parameters);
             
             var productData = data.FirstOrDefault();
             if (productData == null)
@@ -77,7 +65,7 @@ public class ProductController : ControllerBase
     }
 
     // HTTP POST method to add a new product
-    [HttpPost(Name = "CreateProduct")]
+    [HttpPost(Name = "AddProduct")]
     public async Task<IActionResult> Create([FromBody] Product newProduct)
     {
         try
@@ -95,7 +83,7 @@ public class ProductController : ControllerBase
                 { "DiscountPercent", newProduct.DiscountPercent }
             };
 
-            var result = await _dataRepository.GetDataAsync(_storedProcedures.InsertProduct, parameters);
+            var result = await _repo.GetDataAsync("AddProduct", parameters);
             var insertedData = result.FirstOrDefault();
             
             if (insertedData != null && insertedData.ContainsKey("ProductID"))
@@ -132,7 +120,23 @@ public class ProductController : ControllerBase
                 { "DiscountPercent", updatedProduct.DiscountPercent }
             };
 
-            await _dataRepository.GetDataAsync(_storedProcedures.UpdateProduct, parameters);
+            await _repo.GetDataAsync("UpdateProduct", parameters);
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while processing your request.");
+        }
+    }
+
+    // HTTP DELETE method to delete a product by ID
+    [HttpDelete("{id}", Name = "DeleteProduct")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            var parameters = new Dictionary<string, object?> { { "ProductID", id } };
+            await _repo.GetDataAsync("DeleteProduct", parameters);
             return NoContent();
         }
         catch (Exception)
@@ -141,19 +145,18 @@ public class ProductController : ControllerBase
         }
     }
     
-    // HTTP DELETE method to delete a product by ID
-    [HttpDelete("{id}", Name = "DeleteProduct")]
-    public async Task<IActionResult> Delete(int id)
+    private static Product ConvertToProduct(IDictionary<string, object?> row)
     {
-        try
+        return new Product
         {
-            var parameters = new Dictionary<string, object?> { { "ProductID", id } };
-            await _dataRepository.GetDataAsync(_storedProcedures.DeleteProduct, parameters);
-            return NoContent();
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, "An error occurred while processing your request.");
-        }
+            ProductID = row["ProductID"] != DBNull.Value ? Convert.ToInt32(row["ProductID"]) : 0,
+            CategoryId = row["CategoryID"] != DBNull.Value ? Convert.ToInt32(row["CategoryID"]) : 0,
+            ProductCode = row["ProductCode"]?.ToString() ?? string.Empty,
+            ProductName = row["ProductName"]?.ToString() ?? string.Empty,
+            Description = row["Description"]?.ToString() ?? string.Empty,
+            ListPrice = row["ListPrice"] != DBNull.Value ? Convert.ToDecimal(row["ListPrice"]) : 0.0m,
+            DiscountPercent = row["DiscountPercent"] != DBNull.Value ? Convert.ToDecimal(row["DiscountPercent"]) : 0.0m 
+        };
     }
+
 }
